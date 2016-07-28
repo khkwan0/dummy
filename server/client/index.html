@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>DUmmy!</title>
+        <script src="assets/js/phaser.min.js"></script>
+        <script type="text/javascript" src="assets/js/socket.io.js"></script>
+        <script type="text/javascript" src="assets/js/boot.js"></script>
+        <script type="text/javascript" src="assets/js/load.js"></script>
+        <script type="text/javascript" src="assets/js/login.js"></script>
+        <script type="text/javascript" src="assets/js/lobby.js"></script>
+        <script type="text/javascript" src="assets/js/game.js"></script>
+        <script type="text/javascript" src="assets/js/jquery.js"></script>
+        <script type="text/javascript" src="assets/js/jquery-ui/jquery-ui.min.js"></script>
+        <link type="text/css" href="assets/css/sc-btn.css" rel="stylesheet" />
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" />
+    </head>
+    <style>
+        #login_area {
+            position:absolute;
+            top: 50%;
+            left:50%;
+        }
+
+        #lobby  {
+            position:absolute;
+            top:5%;
+            left:5%;
+        }
+
+        #tabs {
+            max-width:1024px;
+width: 1024px;
+height:600px;
+        }
+    </style>
+    <body>
+    <script>
+        $(function() {
+            $('#tabs').tabs();
+        });
+    </script>
+<script>
+var email;
+var fb_id;
+var name;
+var pro_pic;
+
+  // This is called with the results from from FB.getLoginStatus().
+  function statusChangeCallback(response) {
+    // The response object is returned with a status field that lets the
+    // app know the current login status of the person.
+    // Full docs on the response object can be found in the documentation
+    // for FB.getLoginStatus().
+    if (response.status === 'connected') {
+      // Logged into your app and Facebook.
+      testAPI();
+    } else if (response.status === 'not_authorized') {
+      // The person is logged into Facebook, but not your app.
+      document.getElementById('status').innerHTML = 'Please log ' +
+        'into this app.';
+    } else {
+      // The person is not logged into Facebook, so we're not sure if
+      // they are logged into this app or not.
+      document.getElementById('status').innerHTML = 'Please log ' +
+        'into Facebook.';
+    }
+  }
+
+  // This function is called when someone finishes with the Login
+  // Button.  See the onlogin handler attached to it in the sample
+  // code below.
+  function checkLoginState() {
+    FB.getLoginStatus(function(response) {
+      statusChangeCallback(response);
+    });
+  }
+
+  window.fbAsyncInit = function() {
+  FB.init({
+    appId      : '1505778049731243',
+    cookie     : true,  // enable cookies to allow the server to access 
+                        // the session
+    xfbml      : true,  // parse social plugins on this page
+    version    : 'v2.5' // use graph api version 2.5
+  });
+
+  // Now that we've initialized the JavaScript SDK, we call 
+  // FB.getLoginStatus().  This function gets the state of the
+  // person visiting this page and can return one of three states to
+  // the callback you provide.  They can be:
+  //
+  // 1. Logged into your app ('connected')
+  // 2. Logged into Facebook, but not your app ('not_authorized')
+  // 3. Not logged into Facebook and can't tell if they are logged into
+  //    your app or not.
+  //
+  // These three cases are handled in the callback function.
+
+  FB.getLoginStatus(function(response) {
+    statusChangeCallback(response);
+  });
+
+  };
+
+  // Load the SDK asynchronously
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+
+  // Here we run a very simple test of the Graph API after login is
+  // successful.  See statusChangeCallback() for when this call is made.
+  function testAPI() {
+    console.log('Welcome!  Fetching your information.... ');
+    FB.api('/me?fields=email,name', function(response) {
+        FB.api('/me/picture?type=large&redirect=false', function(response2) {
+            console.log(JSON.stringify(response2));
+            pro_pic = response2.data.url;
+            console.log('Successful login for: ' + response.name);
+            email = response.email;
+            fb_id = response.id;
+            name = response.name;
+            game.state.start('lobby');
+/*
+      document.getElementById('status').innerHTML =
+        'Thanks for logging in, ' + response.name + '!';
+*/
+        });
+    });
+  }
+</script>
+<script>
+    $(document).ready(function() {
+        $('#create_game').click(function() {
+            min = $('#min_amount').val();
+            max_time = $('#max_time').val();
+            console.log(min+' '+max_time);
+            socket.emit('create_game', {'min': min, 'max_time': max_time});
+        });
+
+        $(window).unload(function() {
+            socket.emit('logout',name + ' has left the building');
+        });
+    });
+</script>
+
+        <div id="kendummy">
+            <div id="lobby">
+                <div id="tabs" style="display:none">
+                    <ul>
+                        <li><a href="#active-tab">Rooms</a></li>
+                        <li><a href="#create-tab">Create</a></li>
+                        <li><a href="#tabs-3">Tab 3</a></li>
+                    </ul>
+                    <div id="active-tab">
+                    </div>
+                    <div id="create-tab">
+                        <table>
+                            <tr>
+                                <td>Minimum</td>
+                                <td>
+                                    <select id="min_amount">
+                                        <option value="1000">1000</option>
+                                        <option value="2000">2000</option>
+                                    </select>
+                                </td>
+                            </tr>
+                                <tr>
+                                <td>Time</td>
+                                <td>
+                                    <select id="max_time">
+                                        <option value="30">30</option>
+                                        <option value="40">40</option>
+                                        <option value="60">60</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        </table>
+                        <div>
+                            <button id="create_game">Go</button>
+                        </div>
+                    </div>
+                    <div id="tabs-3">
+                    </div>
+                </div>
+            </div>
+            <div id="login_area">
+                <div>
+                    <fb:login-button scope="public_profile,email" onlogin="checkLoginState();">
+                    </fb:login-button>
+                    <div id="status">
+                    </div>
+                </div>
+                <div>
+                    <span>Name: <input id="username" /></span>
+                </div>
+                <div>
+                    <span>Password: <input id="password" /></span>
+                </div>
+                <div class="fb-like" data-share="true" data-width="450" data-show-faces="true"></div>
+            </div>
+        </div>
+    </body>
+</html>
